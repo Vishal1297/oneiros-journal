@@ -1,14 +1,24 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { doc, getDocFromServer, initializeFirestore } from 'firebase/firestore';
+
+export interface FirebaseConfig {
+  apiKey?: string;
+  authDomain?: string;
+  projectId?: string;
+  storageBucket?: string;
+  messagingSenderId?: string;
+  appId?: string;
+  firestoreDatabaseId?: string;
+}
 
 // 1. Attempt to load local config (AI Studio / Development)
 // Using a wildcard (*) prevents Vite from failing the build if the file is missing (e.g. on Vercel)
 const configs = import.meta.glob('../../firebase-applet-config*.json', { eager: true });
-const localConfig = (Object.values(configs)[0] as any)?.default || {};
+const localConfig = (Object.values(configs)[0] as { default?: FirebaseConfig } | undefined)?.default || {};
 
 // 2. Prioritize Environment Variables (Vercel / Production)
-const finalConfig: any = {
+const finalConfig: FirebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || localConfig.apiKey,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || localConfig.authDomain,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || localConfig.projectId,
@@ -41,4 +51,4 @@ async function testConnection() {
     }
   }
 }
-testConnection();
+testConnection().catch(console.error);

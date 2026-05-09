@@ -36,10 +36,11 @@ import {
   Send,
   Sparkles,
   StopCircle,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import React, { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { auth, db } from "./lib/firebase";
 import {
@@ -64,51 +65,67 @@ interface DreamEntry {
 
 // --- Components ---
 
-function Logo({ className, size = "md" }: { className?: string; size?: "sm" | "md" | "lg" }) {
+function Logo({
+  className,
+  size = "md",
+}: {
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}) {
   const sizes = {
     sm: "w-8 h-8",
     md: "w-12 h-12",
-    lg: "w-28 h-28"
+    lg: "w-28 h-28",
   };
-  
+
   return (
-    <div className={cn("relative flex items-center justify-center shrink-0", sizes[size], className)}>
-      <motion.div 
-        animate={{ 
+    <div
+      className={cn(
+        "relative flex items-center justify-center shrink-0",
+        sizes[size],
+        className,
+      )}
+    >
+      <motion.div
+        animate={{
           scale: [1, 1.2, 1],
-          opacity: [0.15, 0.3, 0.15]
+          opacity: [0.15, 0.3, 0.15],
         }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute inset-0 bg-indigo-500 blur-2xl rounded-full" 
+        className="absolute inset-0 bg-indigo-500 blur-2xl rounded-full"
       />
       <motion.div
-        animate={{ 
+        animate={{
           rotate: [0, 360],
         }}
-        transition={{ 
+        transition={{
           rotate: { duration: 30, repeat: Infinity, ease: "linear" },
         }}
         className="relative z-10"
       >
-        <Moon className={cn(
-          "text-indigo-400",
-          size === "sm" ? "h-5 w-5" : size === "md" ? "h-8 w-8" : "h-16 w-16"
-        )} />
+        <Moon
+          className={cn(
+            "text-indigo-400",
+            size === "sm" ? "h-5 w-5" : size === "md" ? "h-8 w-8" : "h-16 w-16",
+          )}
+        />
       </motion.div>
       <motion.div
-        animate={{ 
+        animate={{
           opacity: [0.4, 1, 0.4],
           scale: [0.8, 1.3, 0.8],
           x: [0, 5, 0],
-          y: [0, -5, 0]
+          y: [0, -5, 0],
         }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         className="absolute z-20"
       >
-        <Sparkles className={cn(
-          "text-white",
-          size === "sm" ? "h-3 w-3" : size === "md" ? "h-5 w-5" : "h-8 w-8"
-        )} />
+        <Sparkles
+          className={cn(
+            "text-white",
+            size === "sm" ? "h-3 w-3" : size === "md" ? "h-5 w-5" : "h-8 w-8",
+          )}
+        />
       </motion.div>
     </div>
   );
@@ -120,7 +137,10 @@ function Header({ user, onLogout }: { user: User; onLogout: () => void }) {
       <div className="flex items-center gap-4">
         <Logo size="sm" />
         <h1 className="text-xl font-bold font-display tracking-tighter text-white uppercase flex items-center gap-1.5">
-          Oneiros <span className="text-indigo-400 font-light italic normal-case tracking-normal">Journal</span>
+          Oneiros{" "}
+          <span className="text-indigo-400 font-light italic normal-case tracking-normal">
+            Journal
+          </span>
         </h1>
       </div>
 
@@ -159,10 +179,13 @@ function WelcomeScreen({ onLogin }: { onLogin: () => void }) {
         <Logo size="lg" className="mb-8 md:mb-12 mx-auto" />
         <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold font-display text-white mb-6 tracking-tighter leading-[0.9] md:leading-[0.85] text-balance">
           Mapping the <br />
-          <span className="text-indigo-400 font-light italic">Subconscious.</span>
+          <span className="text-indigo-400 font-light italic">
+            Subconscious.
+          </span>
         </h1>
         <p className="text-slate-400 mb-10 md:mb-14 leading-relaxed max-w-sm mx-auto font-light text-sm md:text-base tracking-wide px-4">
-          A sleek sanctuary for your nocturnal journeys. Capture voice, visualize the surreal, and decode the silence.
+          A sleek sanctuary for your nocturnal journeys. Capture voice,
+          visualize the surreal, and decode the silence.
         </p>
 
         <div className="flex flex-col items-center gap-4">
@@ -191,9 +214,13 @@ function WelcomeScreen({ onLogin }: { onLogin: () => void }) {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span className="relative z-10 tracking-tight text-sm">Continue with Google</span>
+            <span className="relative z-10 tracking-tight text-sm">
+              Continue with Google
+            </span>
           </motion.button>
-          <p className="text-white/30 text-[9px] uppercase tracking-[0.3em] font-medium font-sans">Secure Biometric Access</p>
+          <p className="text-white/30 text-[9px] uppercase tracking-[0.3em] font-medium font-sans">
+            Secure Biometric Access
+          </p>
         </div>
       </motion.div>
     </div>
@@ -226,9 +253,9 @@ function DreamRecorder({
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      recorder.onstop = async () => {
+      recorder.onstop = () => {
         const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
-        processAudio(audioBlob);
+        processAudio(audioBlob).catch(console.error);
       };
 
       recorder.start();
@@ -253,30 +280,38 @@ function DreamRecorder({
     setIsProcessing(true);
     try {
       setProcessingStatus("Transcribing voice...");
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = async () => {
-        const base64Audio = (reader.result as string).split(",")[1];
-        const transcription = await geminiService.transcribeAudio(
-          base64Audio,
-          blob.type,
-        );
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result.split(",")[1]);
+          } else {
+            reject(new Error("Failed to read audio blob"));
+          }
+        };
+        reader.onerror = reject;
+      });
 
-        setProcessingStatus("Decoding archetypes...");
-        const analysis = await geminiService.analyzeDream(transcription);
+      const transcription = await geminiService.transcribeAudio(
+        base64Audio,
+        blob.type,
+      );
 
-        setProcessingStatus("Architecting visualization...");
-        const imageUrl = await geminiService.generateDreamImage(
-          analysis.surrealPrompt,
-        );
+      setProcessingStatus("Decoding archetypes...");
+      const analysis = await geminiService.analyzeDream(transcription);
 
-        onComplete({ transcription, analysis, imageUrl });
-        setIsProcessing(false);
-      };
+      setProcessingStatus("Architecting visualization...");
+      const imageUrl = await geminiService.generateDreamImage(
+        analysis.surrealPrompt,
+      );
+
+      onComplete({ transcription, analysis, imageUrl });
     } catch (err) {
       console.error("Error processing audio:", err);
-      setIsProcessing(false);
       alert("Failed to process dream.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -352,7 +387,7 @@ function DreamChat({
     }
   }, [dream.chatHistory]);
 
-  const sendMessage = async (e: React.FormEvent) => {
+  const sendMessage = async (e: FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
 
@@ -690,6 +725,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
+      if (!u) setDreams([]);
       setLoading(false);
     });
     return () => unsubscribe();
@@ -697,7 +733,6 @@ export default function App() {
 
   useEffect(() => {
     if (!user) {
-      setDreams([]);
       return;
     }
 

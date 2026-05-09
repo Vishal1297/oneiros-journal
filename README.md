@@ -1,6 +1,6 @@
 <div align="center">
-  <!-- LOGO PLACEHOLDER: Replace the src below with your actual logo path -->
-  <img width="100%" alt="Oneiros Logo" src="./screenshots/logo.png" />
+  <!-- LOGO -->
+  <img width="200" alt="Oneiros Logo" src="public/logo.svg" />
   
   <h1>Oneiros Journal</h1>
   
