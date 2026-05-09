@@ -1,6 +1,6 @@
 <div align="center">
   <!-- LOGO PLACEHOLDER: Replace the src below with your actual logo path -->
-  <img width="200" height="200" alt="Oneiros Logo" src="https://placehold.co/400x400/4f46e5/white?text=Oneiros+Logo" />
+  <img width="100%" alt="Oneiros Logo" src="./screenshots/logo.png" />
   
   <h1>Oneiros Journal</h1>
   
