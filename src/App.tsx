@@ -37,6 +37,7 @@ import {
   Sparkles,
   StopCircle,
   Trash2,
+  Edit2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent } from "react";
@@ -61,6 +62,7 @@ interface DreamEntry {
   emotionalTheme?: string;
   symbols?: string[];
   chatHistory?: { role: "user" | "model"; text: string }[];
+  status?: "analyzing" | "visualizing" | "complete" | "error";
 }
 
 // --- Components ---
@@ -230,12 +232,10 @@ function WelcomeScreen({ onLogin }: { onLogin: () => void }) {
 function DreamRecorder({
   onComplete,
 }: {
-  onComplete: (dream: {
-    transcription: string;
-    analysis: DreamAnalysis;
-    imageUrl: string;
-  }) => void;
+  onComplete: (transcription: string) => void;
 }) {
+  const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
+  const [manualText, setManualText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState("");
@@ -298,21 +298,18 @@ function DreamRecorder({
         blob.type,
       );
 
-      setProcessingStatus("Decoding archetypes...");
-      const analysis = await geminiService.analyzeDream(transcription);
-
-      setProcessingStatus("Architecting visualization...");
-      const imageUrl = await geminiService.generateDreamImage(
-        analysis.surrealPrompt,
-      );
-
-      onComplete({ transcription, analysis, imageUrl });
+      onComplete(transcription);
     } catch (err) {
       console.error("Error processing audio:", err);
       alert("Failed to process dream.");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleManualSubmit = async () => {
+    if (!manualText.trim()) return;
+    onComplete(manualText);
   };
 
   if (isProcessing) {
@@ -332,40 +329,107 @@ function DreamRecorder({
   }
 
   return (
-    <div className="flex flex-col items-center gap-8 p-12">
-      <div className="flex items-center justify-center relative">
-        {isRecording && (
-          <div className="absolute -inset-8 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
-        )}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={isRecording ? stopRecording : startRecording}
+    <div className="flex flex-col items-center gap-6 p-8">
+      <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 mb-2">
+        <button
+          onClick={() => setInputMode("voice")}
           className={cn(
-            "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 relative z-10 border",
-            isRecording
-              ? "bg-red-500 border-red-400 shadow-[0_0_40px_rgba(239,68,68,0.4)]"
-              : "bg-indigo-600 border-indigo-400 shadow-[0_0_40px_rgba(79,70,229,0.4)]",
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+            inputMode === "voice"
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+              : "text-slate-500 hover:text-slate-300",
           )}
         >
-          {isRecording ? (
-            <StopCircle className="h-10 w-10 text-white" />
-          ) : (
-            <Mic className="h-10 w-10 text-white" />
+          <Mic className="h-3 w-3" />
+          Voice
+        </button>
+        <button
+          onClick={() => setInputMode("text")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+            inputMode === "text"
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+              : "text-slate-500 hover:text-slate-300",
           )}
-        </motion.button>
+        >
+          <Edit2 className="h-3 w-3" />
+          Text
+        </button>
       </div>
 
-      <div className="text-center">
-        <span className="text-[10px] font-bold tracking-[0.3em] text-indigo-400 uppercase block mb-2">
-          {isRecording ? "Live Capture" : "Wait for signal"}
-        </span>
-        <h3 className="text-sm text-slate-300 font-light italic max-w-[200px]">
-          {isRecording
-            ? "Transcribing your subconscious..."
-            : "Narrate your journey for aethersphere mapping"}
-        </h3>
-      </div>
+      <AnimatePresence mode="wait">
+        {inputMode === "voice" ? (
+          <motion.div
+            key="voice"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="flex flex-col items-center gap-8 py-4"
+          >
+            <div className="flex items-center justify-center relative">
+              {isRecording && (
+                <div className="absolute -inset-8 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
+              )}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={isRecording ? stopRecording : startRecording}
+                className={cn(
+                  "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 relative z-10 border",
+                  isRecording
+                    ? "bg-red-500 border-red-400 shadow-[0_0_40px_rgba(239,68,68,0.4)]"
+                    : "bg-indigo-600 border-indigo-400 shadow-[0_0_40px_rgba(79,70,229,0.4)]",
+                )}
+              >
+                {isRecording ? (
+                  <StopCircle className="h-10 w-10 text-white" />
+                ) : (
+                  <Mic className="h-10 w-10 text-white" />
+                )}
+              </motion.button>
+            </div>
+
+            <div className="text-center">
+              <span className="text-[10px] font-bold tracking-[0.3em] text-indigo-400 uppercase block mb-2">
+                {isRecording ? "Live Capture" : "Wait for signal"}
+              </span>
+              <h3 className="text-sm text-slate-300 font-light italic max-w-[200px]">
+                {isRecording
+                  ? "Transcribing your subconscious..."
+                  : "Narrate your journey for aethersphere mapping"}
+              </h3>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="text"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="w-full space-y-6 py-2"
+          >
+            <div className="relative">
+              <textarea
+                value={manualText}
+                onChange={(e) => setManualText(e.target.value)}
+                placeholder="I was in an endless library where the books were made of water..."
+                className="w-full h-40 bg-white/5 border border-white/10 rounded-2xl p-4 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 resize-none transition-colors"
+              />
+              <div className="absolute bottom-4 right-4 text-[9px] text-slate-600 font-mono tracking-widest">
+                {manualText.length} CHARS
+              </div>
+            </div>
+            <button
+              onClick={handleManualSubmit}
+              disabled={!manualText.trim()}
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/20 hover:bg-indigo-500 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            >
+              <Sparkles className="h-3 w-3" />
+              Analyze Immersion
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -572,7 +636,7 @@ function DreamView({
 
         {/* Center: Visualization */}
         <div className="flex-1 flex flex-col gap-6">
-          <div className="relative flex-1 min-h-[400px] lg:min-h-0 rounded-3xl overflow-hidden border border-brand-border group">
+            <div className="relative flex-1 min-h-[400px] lg:min-h-0 rounded-3xl overflow-hidden border border-brand-border group">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
             {dream.imageUrl ? (
               <img
@@ -582,13 +646,21 @@ function DreamView({
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-pulse">
-                <Loader2 className="h-8 w-8 text-indigo-400 animate-spin" />
+              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm">
+                <Loader2 className="h-10 w-10 text-indigo-400 animate-spin mb-4" />
+                <div className="text-center">
+                  <span className="text-[10px] text-indigo-300 font-bold tracking-[0.3em] uppercase block mb-1">
+                    {dream.status === "analyzing" ? "Archetypal Extraction" : "Visual Reconstruction"}
+                  </span>
+                  <p className="text-[9px] text-slate-500 uppercase tracking-widest">
+                    Consulting the Aethersphere...
+                  </p>
+                </div>
               </div>
             )}
             <div className="absolute bottom-8 left-8 z-20">
               <span className="text-[10px] text-indigo-300 font-bold tracking-[0.3em] uppercase block mb-1">
-                Projection Alpha
+                {dream.imageUrl ? "Projection Alpha" : "Processing Signal"}
               </span>
               <h2 className="text-3xl font-light font-display text-white tracking-tight">
                 {dream.emotionalTheme || "Dream Essence"}
@@ -690,8 +762,11 @@ function DreamGallery({
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 text-slate-800 animate-spin" />
+              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-900/50">
+                <Loader2 className="h-8 w-8 text-indigo-500 animate-spin mb-4" />
+                <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest block animate-pulse">
+                  {dream.status === "analyzing" ? "Decoding Archetypes" : "Architecting Visuals"}
+                </span>
               </div>
             )}
             <div className="absolute top-4 right-4 z-20 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full text-[9px] font-bold text-indigo-300 border border-white/5 uppercase tracking-[0.2em]">
@@ -769,32 +844,55 @@ export default function App() {
 
   const logout = () => signOut(auth);
 
-  const saveDream = async (data: {
-    transcription: string;
-    analysis: DreamAnalysis;
-    imageUrl: string;
-  }) => {
+  const saveDream = async (transcription: string) => {
     if (!user) return;
 
+    // 1. Save immediately with placeholder status
+    setIsRecordingModalOpen(false);
+    
     try {
       const dreamRef = await addDoc(collection(db, "dreams"), {
         userId: user.uid,
         timestamp: serverTimestamp(),
-        transcription: data.transcription,
-        imageUrl: data.imageUrl,
-        emotionalTheme: data.analysis.emotionalTheme,
-        symbols: data.analysis.symbols,
-        interpretation: data.analysis.interpretation,
+        transcription,
         chatHistory: [],
+        status: "analyzing" // Indicate background processing
       });
 
-      setIsRecordingModalOpen(false);
       setSelectedDreamId(dreamRef.id);
+
+      // 2. Perform background processing
+      processDreamInBackground(dreamRef.id, transcription);
     } catch (err) {
       console.error("Save error:", err);
       handleFirestoreError(err, OperationType.WRITE, "dreams");
     }
   };
+
+  const processDreamInBackground = async (dreamId: string, transcription: string) => {
+    const dreamRef = doc(db, "dreams", dreamId);
+    
+    try {
+      // Step A: Analysis
+      const analysis = await geminiService.analyzeDream(transcription);
+      await updateDoc(dreamRef, {
+        emotionalTheme: analysis.emotionalTheme,
+        symbols: analysis.symbols,
+        interpretation: analysis.interpretation,
+        status: "visualizing"
+      });
+
+      // Step B: Image Generation
+      const imageUrl = await geminiService.generateDreamImage(analysis.surrealPrompt);
+      await updateDoc(dreamRef, {
+        imageUrl,
+        status: "complete"
+      });
+    } catch (err) {
+      console.error("Background processing error:", err);
+      await updateDoc(dreamRef, { status: "error" });
+    }
+  }
 
   const deleteDream = async (id: string) => {
     try {

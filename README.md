@@ -36,7 +36,8 @@
 
 ## ✨ Features
 
-- 🎙️ **Voice Capture:** Speak your dreams and let the app transcribe them accurately using device microphones.
+- 🎙️ **Multi-Modal Capture:** Narrate your journey via voice or document it through manual text entry.
+- ⚡ **Background Processing:** Dreams are saved instantly and analyzed asynchronously, allowing you to browse your archive while visuals and interpretations are being architected.
 - 🧠 **Jungian Analysis:** Decode hidden meanings using advanced Gemini-powered psychological analysis.
 - 🎨 **Surrealist Visualizations:** Generate unique digital artwork inspired by your dream's theme.
 - 💬 **Interactive Dream Chat:** Ask questions and explore specific symbols in your recorded dreams.
