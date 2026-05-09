@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "Dream": {
+      "title": "Dream",
+      "description": "A recorded and analyzed dream entry.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who recorded the dream." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the dream was recorded." },
+        "transcription": { "type": "string", "description": "The transcribed text of the voice recording." },
+        "imageUrl": { "type": "string", "description": "URL of the generated surrealist image." },
+        "interpretation": { "type": "string", "description": "Psychological analysis of the dream in Markdown format." },
+        "emotionalTheme": { "type": "string", "description": "The core emotional theme identified by AI." },
+        "symbols": { "type": "array", "items": { "type": "string" }, "description": "List of key symbols found in the dream." },
+        "chatHistory": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "role": { "type": "string", "enum": ["user", "model"] },
+              "text": { "type": "string" }
+            }
+          },
+          "description": "Conversation history about the dream."
+        }
+      },
+      "required": ["userId", "timestamp", "transcription"]
+    }
+  },
+  "firestore": {
+    "dreams/{dreamId}": {
+      "schema": "Dream",
+      "description": "Collection of dream entries indexed by ID."
+    },
+    "users/{userId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string" },
+          "displayName": { "type": "string" },
+          "photoURL": { "type": "string" }
+        }
+      },
+      "description": "User profile information."
+    }
+  }
+}
