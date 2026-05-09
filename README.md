@@ -1,9 +1,9 @@
 <div align="center">
-<!-- LOGO PLACEHOLDER: Replace the src below with your actual logo path -->
-<img width="200" height="200" alt="Oneiros Logo" src="https://placehold.co/400x400/4f46e5/white?text=Oneiros+Logo" />
+<!-- LOGO PLACEHOLDER -->
+<img width="200" height="200" alt="Oneiros Logo" src="https://images.unsplash.com/photo-1541339907198-e08759df9a04?w=400&h=400&fit=crop" style="border-radius: 50%" />
 </div>
 
-# Oneiros Dream Journal
+# Oneiros Journal
 
 A multi-modal dream journal to capture, visualize, and decode your inner subconscious through voice, AI-generated surrealist art, and Jungian analysis.
 

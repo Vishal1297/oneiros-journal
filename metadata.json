@@ -1,5 +1,5 @@
 {
-  "name": "Oneiros Dream Journal",
+  "name": "Oneiros Journal",
   "description": "A multi-modal dream journal to capture, visualize, and decode your inner subconscious through voice, AI-generated surrealist art, and Jungian analysis.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": []
