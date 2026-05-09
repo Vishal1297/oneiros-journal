@@ -30,8 +30,8 @@
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="/Users/vishal/Developer/AI/Projects/oneiros-journal/screenshots/home_page.png" alt="A screenshot of the Oneiros application welcome screen." width="49%">
-  <img src="/Users/vishal/Developer/AI/Projects/oneiros-journal/screenshots/gallery.png" alt="A screenshot of the Oneiros application interface showing the dream archive." width="49%">
+  <img src="./screenshots/home_page.png" alt="A screenshot of the Oneiros application welcome screen." width="49%">
+  <img src="./screenshots/gallery.png" alt="A screenshot of the Oneiros application interface showing the dream archive." width="49%">
 </p>
 
 ## ✨ Features
