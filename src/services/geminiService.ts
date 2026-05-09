@@ -1,6 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Support both AI Studio's process.env and Vite's import.meta.env
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '');
+
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 export interface DreamAnalysis {
   emotionalTheme: string;

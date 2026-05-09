@@ -2,36 +2,26 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
-// Fallback for local development or AI Studio where the file exists
-let fallbackConfig = {};
-try {
-  // @ts-ignore
-  const config = await import('../../firebase-applet-config.json');
-  fallbackConfig = config.default || config;
-} catch (e) {
-  // Ignore if file doesn't exist
-}
+// 1. Attempt to load local config (AI Studio / Development)
+// Using a wildcard (*) prevents Vite from failing the build if the file is missing (e.g. on Vercel)
+const configs = import.meta.glob('../../firebase-applet-config*.json', { eager: true });
+const localConfig = (Object.values(configs)[0] as any)?.default || {};
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID,
-};
-
-// Merge: Prioritize Env Vars, then JSON fallback
+// 2. Prioritize Environment Variables (Vercel / Production)
 const finalConfig: any = {
-  apiKey: firebaseConfig.apiKey || (fallbackConfig as any).apiKey,
-  authDomain: firebaseConfig.authDomain || (fallbackConfig as any).authDomain,
-  projectId: firebaseConfig.projectId || (fallbackConfig as any).projectId,
-  storageBucket: firebaseConfig.storageBucket || (fallbackConfig as any).storageBucket,
-  messagingSenderId: firebaseConfig.messagingSenderId || (fallbackConfig as any).messagingSenderId,
-  appId: firebaseConfig.appId || (fallbackConfig as any).appId,
-  firestoreDatabaseId: firebaseConfig.firestoreDatabaseId || (fallbackConfig as any).firestoreDatabaseId,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || localConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || localConfig.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || localConfig.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || localConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || localConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || localConfig.appId,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || localConfig.firestoreDatabaseId,
 };
+
+// 3. Prevent crashing on initialization if keys are missing (helpful for early deployment steps)
+if (!finalConfig.apiKey) {
+  console.warn("Firebase Configuration missing! If you are on Vercel, set your VITE_FIREBASE_* environment variables. If you are in AI Studio, ensure Firebase is set up.");
+}
 
 const app = initializeApp(finalConfig);
 export const db = initializeFirestore(app, {
@@ -40,13 +30,14 @@ export const db = initializeFirestore(app, {
 });
 export const auth = getAuth(app);
 
-// Connectivity check as per skill instructions
+// Connectivity check
 async function testConnection() {
+  if (!finalConfig.apiKey) return;
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
+      console.error("Firebase connection failed: Check your configuration and Authorized Domains in Firebase Console.");
     }
   }
 }
