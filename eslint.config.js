@@ -3,6 +3,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import firebaseRulesPlugin from "@firebase/eslint-plugin-security-rules";
 
 export default tseslint.config(
   { ignores: ["dist", "node_modules"] },
@@ -28,4 +29,8 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ["firestore.rules"],
+    ...firebaseRulesPlugin.configs["flat/recommended"],
+  }
 );

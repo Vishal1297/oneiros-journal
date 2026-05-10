@@ -38,6 +38,7 @@ import {
   StopCircle,
   Trash2,
   Edit2,
+  AlertCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent } from "react";
@@ -49,7 +50,8 @@ import {
   OperationType,
 } from "./lib/firestoreErrorHandler";
 import { cn } from "./lib/utils";
-import { DreamAnalysis, geminiService } from "./services/geminiService";
+import { geminiService } from "./services/geminiService";
+import { compressBase64Image } from "./lib/imageUtils";
 
 // --- Types ---
 interface DreamEntry {
@@ -133,10 +135,10 @@ function Logo({
   );
 }
 
-function Header({ user, onLogout }: { user: User; onLogout: () => void }) {
+function Header({ user, onLogout, onHome }: { user: User; onLogout: () => void; onHome: () => void }) {
   return (
     <header className="flex items-center justify-between px-8 py-4 bg-brand-surface/80 backdrop-blur-xl sticky top-0 z-50 border-b border-brand-border h-20">
-      <div className="flex items-center gap-4">
+      <button onClick={onHome} className="flex items-center gap-4 hover:opacity-80 transition-opacity">
         <Logo size="sm" />
         <h1 className="text-xl font-bold font-display tracking-tighter text-white uppercase flex items-center gap-1.5">
           Oneiros{" "}
@@ -144,7 +146,7 @@ function Header({ user, onLogout }: { user: User; onLogout: () => void }) {
             Journal
           </span>
         </h1>
-      </div>
+      </button>
 
       <div className="flex items-center gap-6">
         <div className="hidden sm:flex flex-col items-end">
@@ -310,6 +312,7 @@ function DreamRecorder({
   const handleManualSubmit = async () => {
     if (!manualText.trim()) return;
     onComplete(manualText);
+    setManualText("");
   };
 
   if (isProcessing) {
@@ -436,10 +439,8 @@ function DreamRecorder({
 
 function DreamChat({
   dream,
-  onUpdate,
 }: {
   dream: DreamEntry;
-  onUpdate: (updatedDream: DreamEntry) => void;
 }) {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -479,8 +480,6 @@ function DreamChat({
 
       const dreamRef = doc(db, "dreams", dream.id);
       await updateDoc(dreamRef, { chatHistory: finalHistory });
-
-      onUpdate({ ...dream, chatHistory: finalHistory });
     } catch (err) {
       console.error("Chat error:", err);
       handleFirestoreError(err, OperationType.UPDATE, `dreams/${dream.id}`);
@@ -561,8 +560,6 @@ function DreamView({
   onBack: () => void;
   onDelete: (id: string) => void;
 }) {
-  const [activeDream, setActiveDream] = useState(dream);
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -583,12 +580,9 @@ function DreamView({
           </span>
         </button>
         <button
-          onClick={() => {
-            if (confirm("Permanently erase this subconscious imprint?")) {
-              onDelete(dream.id);
-            }
-          }}
+          onClick={() => onDelete(dream.id)}
           className="p-3 text-slate-600 hover:text-red-500 transition-colors rounded-full hover:bg-red-500/10"
+          title="Delete Entry"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -645,6 +639,18 @@ function DreamView({
                 className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
                 referrerPolicy="no-referrer"
               />
+            ) : dream.status === "error" ? (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-red-950/20 backdrop-blur-sm border border-red-500/20">
+                <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
+                <div className="text-center px-6">
+                  <span className="text-[10px] text-red-400 font-bold tracking-[0.3em] uppercase block mb-1">
+                    Capture Failure
+                  </span>
+                  <p className="text-[9px] text-slate-500 uppercase tracking-widest leading-relaxed">
+                    The Aethersphere rejected the signal. <br /> Check your ink and try again.
+                  </p>
+                </div>
+              </div>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm">
                 <Loader2 className="h-10 w-10 text-indigo-400 animate-spin mb-4" />
@@ -705,13 +711,20 @@ function DreamView({
                 Analysis
               </span>
             </div>
-            <div className="prose prose-invert prose-xs max-w-none prose-p:text-slate-400 prose-headings:text-indigo-300 prose-strong:text-indigo-200">
-              <ReactMarkdown>{dream.interpretation || ""}</ReactMarkdown>
-            </div>
+            {dream.interpretation ? (
+              <div className="prose prose-invert prose-xs max-w-none prose-p:text-slate-400 prose-headings:text-indigo-300 prose-strong:text-indigo-200">
+                <ReactMarkdown>{dream.interpretation}</ReactMarkdown>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full opacity-30 gap-3">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-[9px] uppercase tracking-widest">Awaiting Synthesis</span>
+              </div>
+            )}
           </div>
 
           <div className="h-[350px]">
-            <DreamChat dream={activeDream} onUpdate={setActiveDream} />
+            <DreamChat dream={dream} />
           </div>
         </div>
       </div>
@@ -761,6 +774,13 @@ function DreamGallery({
                 alt="Dream visual"
                 referrerPolicy="no-referrer"
               />
+            ) : dream.status === "error" ? (
+              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-red-950/20">
+                <AlertCircle className="h-8 w-8 text-red-500 mb-4" />
+                <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest block">
+                  Signal Failed
+                </span>
+              </div>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-900/50">
                 <Loader2 className="h-8 w-8 text-indigo-500 animate-spin mb-4" />
@@ -796,6 +816,7 @@ export default function App() {
   const [dreams, setDreams] = useState<DreamEntry[]>([]);
   const [selectedDreamId, setSelectedDreamId] = useState<string | null>(null);
   const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -838,7 +859,7 @@ export default function App() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (err) {
-      console.error("Login error:", err);
+      handleFirestoreError(err, OperationType.WRITE, "auth/login");
     }
   };
 
@@ -864,7 +885,6 @@ export default function App() {
       // 2. Perform background processing
       processDreamInBackground(dreamRef.id, transcription);
     } catch (err) {
-      console.error("Save error:", err);
       handleFirestoreError(err, OperationType.WRITE, "dreams");
     }
   };
@@ -883,9 +903,13 @@ export default function App() {
       });
 
       // Step B: Image Generation
-      const imageUrl = await geminiService.generateDreamImage(analysis.surrealPrompt);
+      const rawImageUrl = await geminiService.generateDreamImage(analysis.surrealPrompt);
+      
+      // Step C: Compression (Firestore has a 1MB limit per document)
+      const compressedImageUrl = await compressBase64Image(rawImageUrl, 1024, 0.7);
+
       await updateDoc(dreamRef, {
-        imageUrl,
+        imageUrl: compressedImageUrl,
         status: "complete"
       });
     } catch (err) {
@@ -896,11 +920,12 @@ export default function App() {
 
   const deleteDream = async (id: string) => {
     try {
-      await deleteDoc(doc(db, "dreams", id));
       setSelectedDreamId(null);
+      setConfirmDeleteId(null);
+      await deleteDoc(doc(db, "dreams", id));
     } catch (err) {
       console.error("Delete error:", err);
-      handleFirestoreError(err, OperationType.WRITE, `dreams/${id}`);
+      handleFirestoreError(err, OperationType.DELETE, `dreams/${id}`);
     }
   };
 
@@ -920,7 +945,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-brand-bg text-slate-300 selection:bg-indigo-500/30 font-sans">
-      <Header user={user} onLogout={logout} />
+      <Header user={user} onLogout={logout} onHome={() => setSelectedDreamId(null)} />
 
       <main className="container mx-auto px-8 py-12 max-w-screen-2xl">
         <AnimatePresence mode="wait">
@@ -928,7 +953,7 @@ export default function App() {
             <DreamView
               dream={selectedDream}
               onBack={() => setSelectedDreamId(null)}
-              onDelete={deleteDream}
+              onDelete={(id) => setConfirmDeleteId(id)}
             />
           ) : (
             <motion.div
@@ -1001,6 +1026,50 @@ export default function App() {
                 <div className="h-px bg-slate-800 flex-1"></div>
                 <span>Sync with Oneiros Journal</span>
                 <div className="h-px bg-slate-800 flex-1"></div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {confirmDeleteId && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setConfirmDeleteId(null)}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-brand-surface border border-brand-border w-full max-w-sm rounded-[32px] shadow-2xl relative z-10 overflow-hidden"
+            >
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+                  <Trash2 className="h-8 w-8 text-red-500" />
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">Erase this memory?</h3>
+                <p className="text-slate-500 text-[10px] uppercase tracking-widest leading-relaxed mb-8">
+                  This action will permanently dissolve this subconscious imprint from the archive.
+                </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="flex-1 px-6 py-3 rounded-full border border-brand-border text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:bg-white/5 transition-all"
+                  >
+                    Preserve
+                  </button>
+                  <button
+                    onClick={() => deleteDream(confirmDeleteId)}
+                    className="flex-1 px-6 py-3 rounded-full bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)]"
+                  >
+                    Dissolve
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

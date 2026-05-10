@@ -34,11 +34,12 @@ service cloud.firestore {
       function isValidDream(data) {
         return data.userId == request.auth.uid &&
                data.transcription is string && data.transcription.size() <= 10000 &&
-               (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 1048576)) &&
-               (data.interpretation == null || data.interpretation is string) &&
-               (data.emotionalTheme == null || data.emotionalTheme is string) &&
-               (data.symbols == null || data.symbols is list) &&
-               data.timestamp != null;
+               (!('imageUrl' in data) || data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 600000)) &&
+               (!('interpretation' in data) || data.interpretation == null || data.interpretation is string) &&
+               (!('emotionalTheme' in data) || data.emotionalTheme == null || data.emotionalTheme is string) &&
+               (!('symbols' in data) || data.symbols == null || data.symbols is list) &&
+               (!('status' in data) || data.status in ['analyzing', 'visualizing', 'complete', 'error']) &&
+               (!('chatHistory' in data) || data.chatHistory is list && data.chatHistory.size() <= 100);
       }
 
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
@@ -46,16 +47,24 @@ service cloud.firestore {
       
       allow create: if isSignedIn() && 
                       isValidDream(request.resource.data) &&
-                      request.resource.data.keys().hasAll(['userId', 'timestamp', 'transcription']);
+                      request.resource.data.timestamp == request.time &&
+                      request.resource.data.keys().hasAll(['userId', 'timestamp', 'transcription', 'chatHistory', 'status']) &&
+                      request.resource.data.keys().size() == 5;
       
       allow update: if isSignedIn() && 
                       resource.data.userId == request.auth.uid &&
                       isValidDream(request.resource.data) &&
                       request.resource.data.userId == resource.data.userId &&
-                      // Explicitly allowed update paths (e.g. chat history)
+                      request.resource.data.timestamp == resource.data.timestamp &&
                       (
+                        // Chat update
                         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['chatHistory']) ||
-                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['imageUrl', 'interpretation', 'emotionalTheme', 'symbols', 'chatHistory'])
+                        // Analysis update
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['emotionalTheme', 'symbols', 'interpretation', 'status']) ||
+                        // Image update
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['imageUrl', 'status']) ||
+                        // Comprehensive update (if needed)
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['imageUrl', 'interpretation', 'emotionalTheme', 'symbols', 'chatHistory', 'status'])
                       );
                       
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;

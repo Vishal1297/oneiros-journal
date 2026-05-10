@@ -35,19 +35,26 @@ if (!finalConfig.apiKey) {
 
 const app = initializeApp(finalConfig);
 export const db = initializeFirestore(app, {
-  databaseId: finalConfig.firestoreDatabaseId || '(default)',
   forceLongPolling: true,
-});
+}, finalConfig.firestoreDatabaseId || '(default)');
 export const auth = getAuth(app);
 
 // Connectivity check
 async function testConnection() {
   if (!finalConfig.apiKey) return;
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    // Attempt to read a specific path to check connectivity and permissions
+    await getDocFromServer(doc(db, 'dreams', 'health-check'));
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Firebase connection failed: Check your configuration and Authorized Domains in Firebase Console.");
+    if (error instanceof Error) {
+      if (error.message.includes('the client is offline')) {
+        console.error("Firebase connection failed: The client is offline. This usually means the API key is missing or the current domain is not authorized in the Firebase Console (Authentication > Settings > Authorized Domains).");
+      } else if (error.message.includes('permission-denied')) {
+        // This is actually a GOOD sign - it means we reached the server but were rejected by rules (as expected for a random doc)
+        console.log("Firebase connection established (Rules enforced).");
+      } else {
+        console.warn("Firebase connection check produced an unexpected error:", error.message);
+      }
     }
   }
 }
