@@ -1,17 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 24 24" fill="none" stroke="none">
-  <defs>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
-  <!-- Background Glow -->
-  <circle cx="12" cy="12" r="8" fill="#6366f1" opacity="0.2" filter="url(#glow)"/>
-  <!-- Moon Shape (Lucide Moon Path) -->
-  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" fill="#818cf8"/>
-  <!-- Sparkle (Lucide Sparkle Path) -->
-  <path d="m19 14.5 1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z" fill="white"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" fill="none" stroke="none" viewBox="0 0 24 24"><defs><filter id="glow" width="200%" height="200%" x="-50%" y="-50%"><feGaussianBlur result="coloredBlur" stdDeviation="1.5"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><circle cx="12" cy="12" r="8" fill="#6366f1" filter="url(#glow)" opacity=".2"/><path fill="#818cf8" d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path fill="#fff" d="m19 14.5 1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z"/></svg>
