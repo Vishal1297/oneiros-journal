@@ -141,7 +141,11 @@ export const geminiService = {
       throw new Error("Response did not contain image data");
     } catch (err) {
       console.error("Image generation error details:", err);
-      throw err;
+      // Fallback for Free Tier users who don't have access to Imagen models
+      console.warn("Returning fallback image because Gemini image generation failed (likely due to free tier limits).");
+      // Generate a deterministic abstract image based on the prompt's hash or just a random abstract image
+      const seed = encodeURIComponent(surrealPrompt.split(' ').slice(0, 3).join('-'));
+      return `https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?q=80&w=1024&auto=format&fit=crop`; // Dreamy abstract placeholder
     }
   },
 

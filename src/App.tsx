@@ -902,7 +902,9 @@ export default function App() {
       const rawImageUrl = await geminiService.generateDreamImage(analysis.surrealPrompt);
 
       // Step C: Compression (Firestore has a 1MB limit per document)
-      const compressedImageUrl = await compressBase64Image(rawImageUrl, 1024, 0.7);
+      const compressedImageUrl = rawImageUrl.startsWith("data:") 
+        ? await compressBase64Image(rawImageUrl, 1024, 0.7)
+        : rawImageUrl;
 
       await updateDoc(dreamRef, {
         imageUrl: compressedImageUrl,
