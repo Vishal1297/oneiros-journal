@@ -874,7 +874,8 @@ export default function App() {
         userId: user.uid,
         transcription,
         timestamp: serverTimestamp(),
-        status: "analyzing"
+        status: "analyzing",
+        chatHistory: []
       });
       // Start background processing
       processDreamInBackground(docRef.id, transcription).catch(console.error);
