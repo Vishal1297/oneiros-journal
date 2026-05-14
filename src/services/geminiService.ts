@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Support both AI Studio's process.env and Vite's import.meta.env
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '');
+const GEMINI_API_KEY = import.meta.env.GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '');
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
@@ -30,8 +30,39 @@ const SYSTEM_INSTRUCTIONS = {
         Answer their questions about specific symbols, emotions, or themes using a psychological perspective. Keep the tone empathetic and inquisitive.`
 };
 
+const RATE_LIMIT_KEY = 'gemini_api_calls';
+const MAX_CALLS_PER_HOUR = 30;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+function enforceRateLimit() {
+  if (typeof window === 'undefined' || !window.localStorage) return; // Skip if no localStorage
+
+  const now = Date.now();
+  const rawData = window.localStorage.getItem(RATE_LIMIT_KEY);
+  let calls: number[] = [];
+  
+  if (rawData) {
+    try {
+      calls = JSON.parse(rawData);
+    } catch {
+      calls = [];
+    }
+  }
+
+  // Filter out calls older than 1 hour
+  calls = calls.filter(timestamp => now - timestamp < ONE_HOUR_MS);
+
+  if (calls.length >= MAX_CALLS_PER_HOUR) {
+    throw new Error(`Rate limit exceeded. You can only make ${MAX_CALLS_PER_HOUR} AI requests per hour. Please try again later.`);
+  }
+
+  calls.push(now);
+  window.localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(calls));
+}
+
 export const geminiService = {
   async transcribeAudio(base64Audio: string, mimeType: string): Promise<string> {
+    enforceRateLimit();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
@@ -50,6 +81,7 @@ export const geminiService = {
   },
 
   async analyzeDream(transcription: string): Promise<DreamAnalysis> {
+    enforceRateLimit();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: transcription,
@@ -62,9 +94,9 @@ export const geminiService = {
             emotionalTheme: { type: Type.STRING },
             surrealPrompt: { type: Type.STRING },
             interpretation: { type: Type.STRING, description: "Markdown interpretation of the dream." },
-            symbols: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING } 
+            symbols: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
             },
           },
           required: ["emotionalTheme", "surrealPrompt", "interpretation", "symbols"],
@@ -77,6 +109,7 @@ export const geminiService = {
   },
 
   async generateDreamImage(surrealPrompt: string): Promise<string> {
+    enforceRateLimit();
     try {
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-image",
@@ -103,7 +136,7 @@ export const geminiService = {
           return `data:image/png;base64,${part.inlineData.data}`;
         }
       }
-      
+
       console.error("Image generation partial response:", JSON.stringify(response));
       throw new Error("Response did not contain image data");
     } catch (err) {
@@ -113,11 +146,12 @@ export const geminiService = {
   },
 
   async chatAboutDream(
-    dreamText: string, 
-    interpretation: string, 
+    dreamText: string,
+    interpretation: string,
     history: { role: "user" | "model"; text: string }[],
     newMessage: string
   ): Promise<string> {
+    enforceRateLimit();
     const chat = ai.chats.create({
       model: "gemini-3-flash-preview",
       config: {
@@ -132,7 +166,7 @@ export const geminiService = {
     const result = await chat.sendMessage({
       message: newMessage
     });
-    
+
     return result.text || "";
   }
 };

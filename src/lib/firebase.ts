@@ -19,23 +19,23 @@ const localConfig = (Object.values(configs)[0] as { default?: FirebaseConfig } |
 
 // 2. Prioritize Environment Variables (Vercel / Production)
 const finalConfig: FirebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || localConfig.apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || localConfig.authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || localConfig.projectId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || localConfig.storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || localConfig.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || localConfig.appId,
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || localConfig.firestoreDatabaseId,
+  apiKey: import.meta.env.FIREBASE_API_KEY || localConfig.apiKey,
+  authDomain: import.meta.env.FIREBASE_AUTH_DOMAIN || localConfig.authDomain,
+  projectId: import.meta.env.FIREBASE_PROJECT_ID || localConfig.projectId,
+  storageBucket: import.meta.env.FIREBASE_STORAGE_BUCKET || localConfig.storageBucket,
+  messagingSenderId: import.meta.env.FIREBASE_MESSAGING_SENDER_ID || localConfig.messagingSenderId,
+  appId: import.meta.env.FIREBASE_APP_ID || localConfig.appId,
+  firestoreDatabaseId: import.meta.env.FIREBASE_DATABASE_ID || localConfig.firestoreDatabaseId,
 };
 
 // 3. Prevent crashing on initialization if keys are missing (helpful for early deployment steps)
 if (!finalConfig.apiKey) {
-  console.warn("Firebase Configuration missing! If you are on Vercel, set your VITE_FIREBASE_* environment variables. If you are in AI Studio, ensure Firebase is set up.");
+  console.warn("Firebase Configuration missing! If you are on Vercel, set your FIREBASE_* environment variables. If you are in AI Studio, ensure Firebase is set up.");
 }
 
 const app = initializeApp(finalConfig);
 export const db = initializeFirestore(app, {
-  forceLongPolling: true,
+  experimentalForceLongPolling: true,
 }, finalConfig.firestoreDatabaseId || '(default)');
 export const auth = getAuth(app);
 

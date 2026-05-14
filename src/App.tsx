@@ -630,7 +630,7 @@ function DreamView({
 
         {/* Center: Visualization */}
         <div className="flex-1 flex flex-col gap-6">
-            <div className="relative flex-1 min-h-[400px] lg:min-h-0 rounded-3xl overflow-hidden border border-brand-border group">
+          <div className="relative flex-1 min-h-[400px] lg:min-h-0 rounded-3xl overflow-hidden border border-brand-border group">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
             {dream.imageUrl ? (
               <img
@@ -867,31 +867,26 @@ export default function App() {
 
   const saveDream = async (transcription: string) => {
     if (!user) return;
-
-    // 1. Save immediately with placeholder status
     setIsRecordingModalOpen(false);
-    
+
     try {
-      const dreamRef = await addDoc(collection(db, "dreams"), {
+      const docRef = await addDoc(collection(db, "dreams"), {
         userId: user.uid,
-        timestamp: serverTimestamp(),
         transcription,
-        chatHistory: [],
-        status: "analyzing" // Indicate background processing
+        timestamp: serverTimestamp(),
+        status: "analyzing"
       });
-
-      setSelectedDreamId(dreamRef.id);
-
-      // 2. Perform background processing
-      processDreamInBackground(dreamRef.id, transcription);
+      // Start background processing
+      processDreamInBackground(docRef.id, transcription).catch(console.error);
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, "dreams");
+      console.error("Firestore Error:", err);
+      alert("Failed to save dream to database.");
     }
   };
 
   const processDreamInBackground = async (dreamId: string, transcription: string) => {
     const dreamRef = doc(db, "dreams", dreamId);
-    
+
     try {
       // Step A: Analysis
       const analysis = await geminiService.analyzeDream(transcription);
@@ -904,7 +899,7 @@ export default function App() {
 
       // Step B: Image Generation
       const rawImageUrl = await geminiService.generateDreamImage(analysis.surrealPrompt);
-      
+
       // Step C: Compression (Firestore has a 1MB limit per document)
       const compressedImageUrl = await compressBase64Image(rawImageUrl, 1024, 0.7);
 
